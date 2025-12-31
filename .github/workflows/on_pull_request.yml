@@ -2,7 +2,7 @@ name: PR -> Beta Multilingual Audio
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: [ "beta" ]
 
 jobs:
   run-beta:

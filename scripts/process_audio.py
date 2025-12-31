@@ -100,10 +100,12 @@ def main():
     if status != "COMPLETED":
         raise RuntimeError(f"Transcribe failed: {json.dumps(result, indent=2, default=str)}")
 
-    # 3) Fetch transcript text
-    transcript_uri = result["TranscriptionJob"]["Transcript"]["TranscriptFileUri"]
-    print(f"Transcript URI: {transcript_uri}")
-    transcript_json = fetch_transcript_json(transcript_uri)
+    # 3) Fetch transcript text from S3 output (avoid HTTPS 403 issues)
+    transcribe_out_key = f"{ENV_PREFIX}/transcribe_raw/{job_name}.json"
+    print(f"Reading transcript JSON from s3://{S3_BUCKET}/{transcribe_out_key}")
+
+    obj = s3.get_object(Bucket=S3_BUCKET, Key=transcribe_out_key)
+    transcript_json = json.loads(obj["Body"].read().decode("utf-8"))
 
     transcript_text = transcript_json["results"]["transcripts"][0]["transcript"].strip()
     print(f"Transcript: {transcript_text}")

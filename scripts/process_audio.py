@@ -7,6 +7,32 @@ import uuid
 import requests
 import boto3
 
+def fetch_transcript_json(url: str, retries: int = 12, sleep_s: int = 2) -> dict:
+    last_text = ""
+    last_status = None
+
+    for _ in range(retries):
+        r = requests.get(url, timeout=30)
+        last_status = r.status_code
+        last_text = (r.text or "").strip()
+
+        if not last_text:
+            time.sleep(sleep_s)
+            continue
+
+        # Try JSON parse
+        try:
+            return r.json()
+        except Exception:
+            try:
+                return json.loads(last_text)
+            except Exception:
+                time.sleep(sleep_s)
+
+    raise RuntimeError(
+        f"Could not fetch/parse transcript JSON. status={last_status} body_preview={last_text[:200]!r}"
+    )
+
 # --- Region (explicit) ---
 REGION = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION")
 if not REGION:
@@ -76,7 +102,9 @@ def main():
 
     # 3) Fetch transcript text
     transcript_uri = result["TranscriptionJob"]["Transcript"]["TranscriptFileUri"]
-    transcript_json = requests.get(transcript_uri, timeout=30).json()
+    print(f"Transcript URI: {transcript_uri}")
+    transcript_json = fetch_transcript_json(transcript_uri)
+
     transcript_text = transcript_json["results"]["transcripts"][0]["transcript"].strip()
     print(f"Transcript: {transcript_text}")
 

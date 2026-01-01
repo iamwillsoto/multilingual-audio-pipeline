@@ -1,24 +1,20 @@
-name: PR -> Beta Multilingual Audio
+name: Beta Multilingual Audio 
 
 on:
-  pull_request:
-    branches: [ "beta" ]
+  push:
+    branches: ["beta"]
 
 jobs:
   run-beta:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install deps
-        run: |
-          pip install -r requirements.txt
+      - run: pip install -r requirements.txt
 
       - name: Run pipeline (beta)
         env:
@@ -29,5 +25,5 @@ jobs:
           S3_BUCKET: ${{ secrets.S3_BUCKET }}
           ENV_PREFIX: beta
           TARGET_LANGS: es,fr
-        run: |
-          python scripts/process_audio.py
+        run: python scripts/process_audio.py
+

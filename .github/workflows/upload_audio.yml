@@ -10,14 +10,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-        run: |
-          aws --version
-          aws sts get-caller-identity
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Validate caller identity
+        run: aws sts get-caller-identity
 
       - name: Upload MP3 with env metadata
         env:
@@ -25,5 +26,6 @@ jobs:
           BRANCH_NAME: ${{ github.ref_name }}
         run: |
           if [ "$BRANCH_NAME" = "main" ]; then ENV="prod"; else ENV="beta"; fi
+
           aws s3 cp audio_inputs/intro_en.mp3 s3://$S3_BUCKET/audio_inputs/intro_en.mp3 \
             --metadata env=$ENV

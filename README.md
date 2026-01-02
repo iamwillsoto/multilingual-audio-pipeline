@@ -109,13 +109,30 @@ Confirm that transcripts, translations, and generated audio files exist under th
 
 ---
 
-## Design Rationale
+## Business Value
 
-This implementation is designed to be:
-- Fully automated and event-driven
-- Reproducible via Infrastructure as Code
-- Environment-aware without duplicating stacks
-- Secure via least-privilege IAM
-- Operationally aligned with real-world CI/CD practices
+This solution addresses the operational challenge of delivering localized audio content at scale without increasing manual effort or operational overhead. By combining managed AWS AI services with event-driven automation and Infrastructure as Code, the pipeline enables teams to transform raw audio into multilingual assets reliably, securely, and repeatably.
+
+From a business perspective, the architecture is designed to:
+
+- **Reduce Time-to-Market for Global Content**  
+  Audio localization is fully automated. New instructional content can be published once and rapidly converted into multiple languages, allowing organizations to serve international audiences without delaying releases or coordinating manual translation workflows.
+
+- **Eliminate Manual and Error-Prone Processes**  
+  The end-to-end workflow removes the need for manual transcription, translation, and audio generation. Automation ensures consistency in output structure, naming, and quality while reducing the risk of human error.
+
+- **Scale with Demand Without Infrastructure Management**  
+  The use of fully managed services (Amazon Transcribe, Translate, Polly, Lambda, and S3) allows the pipeline to scale automatically with content volume, without requiring capacity planning or infrastructure maintenance.
+
+- **Support Safe Change Management and Environment Isolation**  
+  Environment-aware routing (beta vs. production) enables teams to validate changes safely before promotion. This mirrors real-world release practices and reduces the risk of introducing defects into production workflows.
+
+- **Improve Operational Visibility and Auditability**  
+  All artifacts are stored in structured, predictable S3 paths, providing a clear audit trail of generated content. This simplifies review, troubleshooting, and downstream integration with other systems.
+
+- **Enable Reproducible, Governed Deployments**  
+  Infrastructure as Code ensures consistent environments across deployments and supports governance, repeatability, and controlled change management. CI/CD-driven infrastructure updates reduce configuration drift and improve long-term maintainability.
+
+Overall, this architecture provides a scalable foundation for multilingual content delivery, aligning technical implementation with business goals such as global reach, operational efficiency, and controlled growth—without introducing unnecessary complexity or manual intervention.
 
 ---

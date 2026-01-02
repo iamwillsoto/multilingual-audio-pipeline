@@ -1,0 +1,38 @@
+name: Upload Audio to S3 (trigger pipeline)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["beta", "main"]
+    paths:
+      - "audio_inputs/**.mp3"
+
+jobs:
+  upload-audio:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload MP3s with env metadata
+        env:
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          if [ "$BRANCH" = "main" ]; then ENV="prod"; else ENV="beta"; fi
+          echo "Branch=$BRANCH => env=$ENV"
+
+          shopt -s nullglob
+          for f in audio_inputs/*.mp3; do
+            base="$(basename "$f")"
+            echo "Uploading $f"
+            aws s3 cp "$f" "s3://$S3_BUCKET/audio_inputs/$base" \
+              --metadata env="$ENV"
+          done

@@ -1,33 +1,46 @@
-name: Main -> Prod Multilingual Audio
+name: Deploy Infra (prod)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths:
+      - "infra/**"
+      - "lambda/**"
 
 jobs:
-  run-prod:
+  deploy-prod:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          python-version: "3.12"
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Install deps
-        run: |
-          pip install -r requirements.txt
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-      - name: Run pipeline (prod)
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
-          S3_BUCKET: ${{ secrets.S3_BUCKET }}
-          ENV_PREFIX: prod
-          TARGET_LANGS: es,fr
+      - name: Build Lambda zip (processor)
         run: |
-          python scripts/process_audio.py
+          cd ../lambda/processor
+          rm -f processor.zip
+          zip -r processor.zip lambda_function.py
+          unzip -l processor.zip | head
+
+      - name: Terraform Init (remote state prod)
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=multilingual-audio-pipeline/prod/terraform.tfstate" \
+            -backend-config="region=${{ secrets.AWS_REGION }}" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform Apply (prod)
+        run: terraform apply -auto-approve -var-file=prod.tfvars
